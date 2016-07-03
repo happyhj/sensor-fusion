@@ -10,3 +10,5 @@ SensorSample.prototype.set = function(sample, timestampS) {
 SensorSample.prototype.copy = function(sensorSample) {
   this.set(sensorSample.sample, sensorSample.timestampS);
 };
+
+module.exports = SensorSample;

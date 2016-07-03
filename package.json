@@ -1,0 +1,19 @@
+{
+  "name": "sensor-fusion",
+  "dependencies": {
+    "es6-promise": "^3.2.1",
+    "gl-matrix-quat": "^2.2.1-npm",
+    "gl-matrix-vec3": "^2.2.1-npm",
+    "gyronorm": "^2.0.4"
+  },
+  "devDependencies": {
+    "browserify": "latest",
+    "derequire": "latest",
+    "watchify": "latest"
+  },
+  "main": "build/complementary-orientation.pkgd.js",
+  "scripts": {
+    "build": "browserify src/complementary-orientation.js | derequire > build/complementary-orientation.pkgd.js",
+    "watch": "watchify src/complementary-orientation.js -v -d -o 'derequire > build/complementary-orientation.pkgd.js'"
+  }
+}

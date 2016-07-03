@@ -23,42 +23,63 @@ var DEBUG = false;
  * @param {Number} predictionTimeS time from head movement to the appearance of
  * the corresponding image.
  */
+ 
+// quat
+var quat = require('gl-matrix-quat');
+var vec3 = require('gl-matrix-vec3');
+
+
 function PosePredictor(predictionTimeS) {
   this.predictionTimeS = predictionTimeS;
 
   // The quaternion corresponding to the previous state.
-  this.previousQ = new THREE.Quaternion();
+//  this.previousQ = new THREE.Quaternion();
+  this.previousQ = quat.create();
+
   // Previous time a prediction occurred.
   this.previousTimestampS = null;
 
   // The delta quaternion that adjusts the current pose.
-  this.deltaQ = new THREE.Quaternion();
+//  this.deltaQ = new THREE.Quaternion();
+  this.deltaQ = quat.create();
+
   // The output quaternion.
-  this.outQ = new THREE.Quaternion();
+//  this.outQ = new THREE.Quaternion();
+  this.outQ = quat.create();
+
 }
 
 PosePredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
   if (!this.previousTimestampS) {
-    this.previousQ.copy(currentQ);
+//    this.previousQ.copy(currentQ);
+  	quat.copy(this.previousQ, currentQ)
     this.previousTimestampS = timestampS;
     return currentQ;
   }
 
   // Calculate axis and angle based on gyroscope rotation rate data.
-  var axis = new THREE.Vector3();
+  var axis = vec3.create();
+/*
   axis.copy(gyro);
   axis.normalize();
-
-  var angularSpeed = gyro.length();
+*/
+  vec3.copy(axis, gyro);
+  vec3.normalize(axis, axis);
+  
+  var angularSpeed = vec3.length(gyro);
 
   // If we're rotating slowly, don't do prediction.
-  if (angularSpeed < THREE.Math.degToRad(20)) {
+  if (angularSpeed < 20 * ( Math.PI / 180 ) ) {
     if (DEBUG) {
       console.log('Moving slowly, at %s deg/s: no prediction',
-                  THREE.Math.radToDeg(angularSpeed).toFixed(1));
+                  (angularSpeed * (180 / Math.PI)).toFixed(1));
     }
+/*
     this.outQ.copy(currentQ);
     this.previousQ.copy(currentQ);
+*/
+    quat.copy(this.outQ, currentQ);
+    quat.copy(this.previousQ, currentQ);
     return this.outQ;
   }
 
@@ -66,11 +87,20 @@ PosePredictor.prototype.getPrediction = function(currentQ, gyro, timestampS) {
   var deltaT = timestampS - this.previousTimestampS;
   var predictAngle = angularSpeed * this.predictionTimeS;
 
+/*
   this.deltaQ.setFromAxisAngle(axis, predictAngle);
   this.outQ.copy(this.previousQ);
   this.outQ.multiply(this.deltaQ);
 
   this.previousQ.copy(currentQ);
+*/
+  quat.setAxisAngle(this.deltaQ, axis, predictAngle);
+  quat.copy(this.outQ, this.previousQ);
+  quat.multiply(this.outQ, this.outQ, this.deltaQ);
+
+  quat.copy(this.previousQ, currentQ);
 
   return this.outQ;
 };
+
+module.exports = PosePredictor;

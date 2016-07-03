@@ -10,8 +10,9 @@ var predictHistory = new CBuffer(HISTORY_SIZE);
 function loop() {
   if (fusion.isAccelerometer) {
     // Accelerometer is GREEN.
-    var lastAccel = new THREE.Vector3();
-    lastAccel.copy(co.filter.measuredGravity);
+//    var lastAccel = new THREE.Vector3();
+    var lastAccel = vec3.create();
+    vec3.copy(lastAccel, co.filter.measuredGravity);
     accelHistory.push(lastAccel);
   } else {
     accelHistory.data = [];
@@ -19,12 +20,20 @@ function loop() {
 
   if (fusion.isGyroscope) {
     // Gyro is BLUE.
+/*
     var lastGyro = new THREE.Vector3(0, 0, -1);
     var invGyroOnly = new THREE.Quaternion();
     invGyroOnly.copy(co.filter.gyroIntegralQ);
     invGyroOnly.inverse();
     lastGyro.applyQuaternion(invGyroOnly);
     lastGyro.normalize();
+*/
+    var lastGyro = vec3.fromValues(0, 0, -1);
+    var invGyroOnly = quat.create();
+    quat.copy(invGyroOnly, co.filter.gyroIntegralQ);
+    quat.conjugate(invGyroOnly, invGyroOnly);
+    vec3.transformQuat(lastGyro, lastGyro, invGyroOnly);
+    vec3.normalize(lastGyro, lastGyro);
     gyroHistory.push(lastGyro);
   } else {
     gyroHistory.data = [];
@@ -32,8 +41,12 @@ function loop() {
 
   if (fusion.isFusion) {
     // Filter is ORANGE.
+/*
     var lastFilter = new THREE.Vector3();
     lastFilter.copy(co.filter.estimatedGravity);
+*/
+    var lastFilter = vec3.create();
+    vec3.copy(lastFilter, co.filter.estimatedGravity);
     filterHistory.push(lastFilter);
   } else {
     filterHistory.data = [];
@@ -42,12 +55,21 @@ function loop() {
   if (fusion.isPrediction) {
     co.getOrientation();
     // Predicted is RED.
+/*
     var predict = new THREE.Vector3(0, 0, -1);
     var invPredicted = new THREE.Quaternion();
     invPredicted.copy(co.predictedQ);
     invPredicted.inverse();
     predict.applyQuaternion(invPredicted);
     predict.normalize();
+*/
+    var predict = vec3.fromValues(0, 0, -1);
+    var invPredicted = quat.create();
+    quat.copy(invPredicted, co.predictedQ);
+    quat.conjugate(invPredicted, invPredicted);
+    vec3.transformQuat(predict, predict, invPredicted);
+    vec3.normalize(predict, predict);
+    
     predictHistory.push(predict);
   } else {
     predictHistory.data = [];
@@ -154,8 +176,20 @@ view.interval({
   length: HISTORY_SIZE,
   expr: function (emit, x, i, t) {
     var accel = accelHistory.get(i);
+	var idx;
+    switch(fusion.axis) {
+	    case 'x':
+	    idx = 0;
+	    break;
+	    case 'y':
+	    idx = 1;
+	    break;
+	    case 'z':
+	    idx = 2;
+	    break;
+    }
     if (accel) {
-      emit(x, accel[fusion.axis]);
+      emit(x, accel[idx]);
     }
   },
   items: 1,
@@ -176,8 +210,20 @@ view.interval({
   length: HISTORY_SIZE,
   expr: function (emit, x, i, t) {
     var gyro = gyroHistory.get(i);
+	var idx;
+    switch(fusion.axis) {
+	    case 'x':
+	    idx = 0;
+	    break;
+	    case 'y':
+	    idx = 1;
+	    break;
+	    case 'z':
+	    idx = 2;
+	    break;
+    }
     if (gyro) {
-      emit(x, gyro[fusion.axis]);
+      emit(x, gyro[idx]);
     }
   },
   items: 1,
@@ -197,8 +243,20 @@ view.interval({
   length: HISTORY_SIZE,
   expr: function (emit, x, i, t) {
     var filter = filterHistory.get(i);
+	var idx;
+    switch(fusion.axis) {
+	    case 'x':
+	    idx = 0;
+	    break;
+	    case 'y':
+	    idx = 1;
+	    break;
+	    case 'z':
+	    idx = 2;
+	    break;
+    }
     if (filter) {
-      emit(x, filter[fusion.axis]);
+      emit(x, filter[idx]);
     }
   },
   items: 1,
@@ -218,8 +276,21 @@ view.interval({
   length: HISTORY_SIZE,
   expr: function (emit, x, i, t) {
     var predict = predictHistory.get(i);
+	var idx;
+    switch(fusion.axis) {
+	    case 'x':
+	    idx = 0;
+	    break;
+	    case 'y':
+	    idx = 1;
+	    break;
+	    case 'z':
+	    idx = 2;
+	    break;
+    }
     if (predict) {
-      emit(x, predict[fusion.axis]);
+
+      emit(x, predict[idx]);
     }
   },
   items: 1,
